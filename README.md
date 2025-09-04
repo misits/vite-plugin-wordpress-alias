@@ -5,11 +5,30 @@ A Vite plugin that transforms asset URLs to use Vite dev server URLs during deve
 ## Features
 
 - 🚀 Transform `/src/` paths to Vite dev server URLs in development
-- 🎨 Support for custom aliases (`@fonts`, `@svg`, `@images`, etc.)
-- 📦 Works with CSS, SCSS, JavaScript, TypeScript, and Vue files
-- 🔧 Zero-config for standard WordPress theme structures
-- 🐛 Debug mode for troubleshooting transformations
+- 🎨 **Zero configuration** - automatically detects and transforms custom aliases (`@fonts`, `@svg`, `@images`, etc.)
+- 📦 Works with CSS, SCSS, JavaScript, TypeScript, Vue, and JSX files
+- 🔧 Automatically uses your existing Vite `resolve.alias` configuration
 - ⚡ Only runs in development mode (no production overhead)
+- 🎯 Clean, well-documented code ready for production use
+
+## Why?
+
+**The WordPress + Vite Problem:** When developing WordPress themes with Vite, you're running two servers:
+- **WordPress site** (e.g., `https://mysite.local`) - serves your PHP theme
+- **Vite dev server** (`http://localhost:5173`) - serves your assets with HMR
+
+**The Issue:** Your CSS/JS runs in the WordPress context, so when it tries to load assets like `url("/src/assets/logo.svg")`, the browser looks for them on your WordPress domain instead of the Vite dev server, causing 404 errors.
+
+**The Solution:** This plugin automatically converts all asset paths to use your Vite dev server URL during development:
+
+```scss
+// ❌ Browser tries: https://mysite.local/src/assets/logo.svg (404 error)
+background: url("/src/assets/logo.svg");
+
+// ✅ Plugin converts to: http://localhost:5173/src/assets/logo.svg (works!)
+```
+
+**Universal:** While built for WordPress, this works with any setup where you need assets served from Vite's dev server instead of your main site domain.
 
 ## Installation
 
@@ -25,7 +44,7 @@ yarn add -D vite-plugin-wordpress-alias
 
 ## Usage
 
-### Basic Usage
+### Basic Usage (Recommended)
 
 Add the plugin to your `vite.config.js`:
 
@@ -36,11 +55,21 @@ import wordpressAlias from 'vite-plugin-wordpress-alias';
 export default defineConfig({
   plugins: [
     wordpressAlias()
-  ]
+  ],
+  resolve: {
+    alias: {
+      "@": "./src/",
+      "@assets": "./src/assets",
+      "@svg": "./src/assets/svg",
+      "@fonts": "./src/assets/fonts",
+      "@images": "./src/assets/images",
+      // ... your other aliases
+    }
+  }
 });
 ```
 
-### With Custom Configuration
+### With Custom Dev Server URL
 ```js
 import { defineConfig } from 'vite';
 import wordpressAlias from 'vite-plugin-wordpress-alias';
@@ -48,19 +77,7 @@ import wordpressAlias from 'vite-plugin-wordpress-alias';
 export default defineConfig({
   plugins: [
     wordpressAlias({
-      // Custom Vite dev server URL (default: 'http://localhost:5173')
-      devServerUrl: 'http://localhost:3000',
-      
-      // Custom alias mappings
-      aliases: {
-        '@fonts': '/src/assets/fonts',
-        '@svg': '/src/assets/svg',
-        '@images': '/src/assets/images',
-        '@videos': '/src/assets/videos'
-      },
-      
-      // Enable debug logging (default: false)
-      debug: true
+      devServerUrl: 'http://localhost:3000' // Default: 'http://localhost:5173'
     })
   ]
 });
@@ -68,14 +85,14 @@ export default defineConfig({
 
 ## How It Works
 
-The plugin transforms asset URLs during development to point to Vite's dev server instead of the WordPress domain.
+The plugin automatically detects your Vite aliases from `resolve.alias` and transforms asset URLs during development to point to Vite's dev server instead of the WordPress domain.
 
 ### CSS/SCSS Transformations
 
 ```scss
 // Before transformation
 .hero {
-  background-image: url("/src/scss/assets/images/hero.jpg");
+  background-image: url("/src/assets/images/hero.jpg");
 }
 
 @font-face {
@@ -84,11 +101,11 @@ The plugin transforms asset URLs during development to point to Vite's dev serve
 
 // After transformation (in development)
 .hero {
-  background-image: url("http://localhost:5173/src/scss/assets/images/hero.jpg");
+  background-image: url("http://localhost:5173/src/assets/images/hero.jpg");
 }
 
 @font-face {
-  src: url("http://localhost:5173/src/scss/assets/fonts/custom-font.woff2");
+  src: url("http://localhost:5173/src/assets/fonts/custom-font.woff2");
 }
 ```
 
@@ -96,12 +113,12 @@ The plugin transforms asset URLs during development to point to Vite's dev serve
 
 ```js
 // Before transformation
-import logo from '/src/scss/assets/svg/logo.svg';
-import font from '@fonts/custom-font.woff2';
+import logo from '/src/assets/svg/logo.svg';
+const bgImage = '/src/assets/images/bg.jpg';
 
 // After transformation (in development)
-import logo from 'http://localhost:5173/src/scss/assets/svg/logo.svg';
-import font from 'http://localhost:5173/src/scss/assets/fonts/custom-font.woff2';
+import logo from 'http://localhost:5173/src/assets/svg/logo.svg';
+const bgImage = 'http://localhost:5173/src/assets/images/bg.jpg';
 ```
 
 ## Configuration Options
@@ -109,8 +126,6 @@ import font from 'http://localhost:5173/src/scss/assets/fonts/custom-font.woff2'
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `devServerUrl` | `string` | `'http://localhost:5173'` | The URL of your Vite dev server |
-| `aliases` | `object` | `{}` | Custom alias mappings (e.g., `{ '@fonts': '/src/scss/assets/fonts' }`) |
-| `debug` | `boolean` | `false` | Enable debug logging to see transformations |
 
 ## Supported File Types
 
@@ -143,8 +158,7 @@ wp-content/themes/your-theme/
 │   ├── assets/
 │   │   ├── fonts/
 │   │   ├── svg/
-│   │   ├── images/
-│   │   └── videos/
+│   │   └── images/
 │   ├── scss/
 │   │   └── app.scss
 │   └── javascript/
@@ -153,23 +167,25 @@ wp-content/themes/your-theme/
 └── functions.php
 ```
 
-## Troubleshooting
-
-### Enable Debug Mode
-
-To see what transformations are happening:
+## Example WordPress Theme Integration
 
 ```js
-wordpressAlias({
-  debug: true
-})
+// vite.config.js
+import { defineConfig } from 'vite';
+import wordpressAlias from 'vite-plugin-wordpress-alias';
+
+export default defineConfig({
+  plugins: [
+    wordpressAlias()
+  ],
+  resolve: {
+    alias: {
+      "@fonts": resolve(__dirname, "./src/scss/assets/fonts"),
+      "@svg": resolve(__dirname, "./src/scss/assets/svg"),
+    }
+  },
+});
 ```
-
-### Common Issues
-
-1. **Assets not loading**: Ensure your Vite dev server is running and accessible at the configured URL
-2. **Aliases not working**: Check that your alias paths match your actual directory structure
-3. **CORS errors**: Make sure your Vite server is configured with proper CORS headers
 
 ## Contributing
 
