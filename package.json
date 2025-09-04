@@ -1,0 +1,43 @@
+{
+  "name": "vite-plugin-wordpress-alias",
+  "version": "1.0.0",
+  "description": "A Vite plugin that transforms asset URLs for WordPress theme development",
+  "type": "module",
+  "main": "vite-plugin-wordpress-alias.js",
+  "exports": {
+    ".": "./vite-plugin-wordpress-alias.js"
+  },
+  "files": [
+    "vite-plugin-wordpress-alias.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "wordpress",
+    "wordpress-theme",
+    "asset-management",
+    "alias",
+    "development"
+  ],
+  "author": "Martin IS IT Services",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/misits/vite-plugin-wordpress-alias.git"
+  },
+  "bugs": {
+    "url": "https://github.com/misits/vite-plugin-wordpress-alias/issues"
+  },
+  "homepage": "https://github.com/misits/vite-plugin-wordpress-alias#readme",
+  "peerDependencies": {
+    "vite": ">=3.0.0 || >=4.0.0 || >=5.0.0 || >=6.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
